@@ -1,60 +1,81 @@
-# blueriiot-api-client
-This is an unofficial node js wrapper for the Blueriiot API
+# blueriiot_api_client
+
+Unofficial Dart/Flutter client for the Blue Riiot (Blue Connect) API.
+Dart port of the Node.js package `blueriiot-api-client`.
+
+Not published to pub.dev — add it as a path or git dependency.
+
+## Install
+
+Path dependency:
+
+```yaml
+dependencies:
+  blueriiot_api_client:
+    path: ../blueriiot-api-client-flutter
+```
+
+Git dependency:
+
+```yaml
+dependencies:
+  blueriiot_api_client:
+    git:
+      url: https://github.com/ludvigaldrin/blueriiot-api-client.git
+```
 
 ## Usage
-Example to fetch all pools
 
-```javascript
-import 'dotenv/config';
-import { BlueriiotAPI } from './api.mjs';
-import { logger } from './logger.mjs';
-const api = new BlueriiotAPI(process.env.EMAIL, process.env.PASSWORD);
-api.authenticate()
-    .then(async () => {
-        logger.debug('Authentication success!');
-    })
-    .catch((error) => {
-        logger.error(`Authentication failed! ${error.message}`);
-    });
-//logger.log(await api.getUser());
-//logger.log(await api.getBlueDevice(process.env.BLUEID));
-//logger.log(await api.getSwimmingPools());
-//logger.log(await api.getSwimmingPool(process.env.POOLID));
-// DEPECREATED logger.log(await api.getSwimmingPoolStatus(process.env.POOLID));
-//logger.log(await api.getSwimmingPoolBlueDevices(process.env.POOLID));
-//logger.log(await api.getSwimmingPoolFeed(process.env.POOLID, 'en'));
-//logger.log(await api.getLastMeasurements(process.env.POOLID, process.env.BLUEID));
-//logger.log(await api.getGuidance(process.env.POOLID, 'en'));
-//logger.log(await api.getGuidanceHistory(process.env.POOLID, 'en'));
-//logger.log(await api.getChemistry(process.env.POOLID));
-//logger.log(await api.getWeather(process.env.POOLID, 'se'));
-//logger.log(await api.getBlueDeviceCompatibility(process.env.BLUEID));
+```dart
+import 'package:blueriiot_api_client/blueriiot_api_client.dart';
+
+Future<void> main() async {
+  final api = BlueriiotApi(email: 'you@example.com', password: 'secret');
+
+  try {
+    await api.authenticate();
+    final pools = await api.getSwimmingPools();
+    print(pools);
+  } on BlueriiotException catch (e) {
+    print('Blueriiot error: ${e.message}');
+  } finally {
+    api.close();
+  }
+}
 ```
 
-## End Points
-```javascript
+Every endpoint returns the raw decoded JSON as `Map<String, dynamic>`.
+Sample payloads for each endpoint live in `examples/`.
+
+## Endpoints
+
+```dart
 getUser()
-getBlueDevice(<blue_device_serial>)
+getBlueDevice(blueDeviceSerial)
 getSwimmingPools()
-getSwimmingPool(<swimming_pool_id>)
-// DEPECREATED getSwimmingPoolStatus(<swimming_pool_id>)
-getSwimmingPoolBlueDevices(<swimming_pool_id>)
-getSwimmingPoolFeed(<swimming_pool_id>,<language>)
-getLastMeasurements(<swimming_pool_id>,<blue_device_serial>)
-getGuidance(<swimming_pool_id>,<language>)
-getGuidanceHistory(<swimming_pool_id>,<language>)
-getChemistry(<swimming_pool_id>)
-getWeather(<swimming_pool_id>,<language>)
-getBlueDeviceCompatibility(<blue_device_serial>)
+getSwimmingPool(swimmingPoolId)
+getSwimmingPoolStatus(swimmingPoolId) // deprecated
+getSwimmingPoolBlueDevices(swimmingPoolId)
+getSwimmingPoolFeed(swimmingPoolId, language)
+getLastMeasurements(swimmingPoolId, blueDeviceSerial)
+getGuidance(swimmingPoolId, language)
+getGuidanceHistory(swimmingPoolId, language)
+getChemistry(swimmingPoolId)
+getWeather(swimmingPoolId, language)
+getBlueDeviceCompatibility(blueDeviceSerial)
 ```
 
-## Test
-For test you can look in the test.js file. To use it either mod the code or add a .env file.
-.env should then include at least email and password. Poolid/blueid can be added when you have it.
+## Auth
 
-```javascript
-EMAIL= ""
-PASSWORD=""
-POOLID=""
-BLUEID=""
+`authenticate()` logs in against `user/login` and keeps the returned temporary
+AWS credentials in memory. Every other call re-authenticates automatically when
+the credentials are missing or expired, then signs the request with AWS
+Signature V4 (region `eu-west-1`, service `execute-api`).
+
+## Example
+
+See `example/blueriiot_api_client_example.dart`:
+
+```sh
+dart run example/blueriiot_api_client_example.dart you@example.com secret
 ```
